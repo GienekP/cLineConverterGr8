@@ -12,10 +12,10 @@ byte load(const char *fn, byte *b, unsigned int s)
 {
 	byte ret=0;
 	unsigned int i=0;
-    FILE *pf;
-    pf=fopen(fn,"rb");
-    if (pf)
-    {
+    	FILE *pf;
+    	pf=fopen(fn,"rb");
+    	if (pf)
+    	{
 		i=fread(b,sizeof(byte),s,pf);
 		fclose(pf);
 	};	
@@ -25,34 +25,34 @@ byte load(const char *fn, byte *b, unsigned int s)
 /*--------------------------------------------------------------------*/
 byte averageChroma(const byte *dta, unsigned int s)
 {
-    byte hist[16],max=0,p=0;
-    unsigned int i;
-    for (i=0; i<16; i++) {hist[i]=0;};
-    for (i=0; i<s; i++)
-    {
-        hist[((dta[i]>>4)&0x0F)]++;
-    };
-    for (i=0; i<16; i++)
-    {
-        if (hist[i]>max) {max=hist[i];p=i;};
-    };
-    return (p<<4);
+    	byte hist[16],max=0,p=0;
+    	unsigned int i;
+    	for (i=0; i<16; i++) {hist[i]=0;};
+    	for (i=0; i<s; i++)
+    	{
+        	hist[((dta[i]>>4)&0x0F)]++;
+    	};
+    	for (i=0; i<16; i++)
+    	{
+        	if (hist[i]>max) {max=hist[i];p=i;};
+    	};
+    	return (p<<4);
 }
 /*--------------------------------------------------------------------*/
-void buildchroma(const byte *in, byte *rp, byte lvl)
+void buildChroma(const byte *in, byte *rp, byte lvl)
 {
 	const unsigned int ct[14]={14,64,80,48,48,48,18,46,64,64,48,48,40,10};
-    unsigned int i,j,h=0;
-    for (i=0; i<(ALCHEIGHT/2); i++)
-    {
-        for (j=0; j<14; j++)
-        {
-            unsigned int cyc=ct[j];
-            byte a=averageChroma(&in[h],cyc)+(lvl>>4);
-            h+=cyc;
-            rp[i*14+j]=a;
-        };
-    };
+    	unsigned int i,j,h=0;
+    	for (i=0; i<(ALCHEIGHT/2); i++)
+    	{
+        	for (j=0; j<14; j++)
+        	{
+            		unsigned int cyc=ct[j];
+            		byte a=averageChroma(&in[h],cyc)+(lvl>>4);
+            		h+=cyc;
+            		rp[i*14+j]=a;
+        	};
+    	};
 }
 /*--------------------------------------------------------------------*/
 extern void saveASM(const char *, const byte *, const byte *, byte lvl);
@@ -64,7 +64,7 @@ void lineconvg8(const char *fn1, const char *fn2, const char *fn3, byte lvl)
 	byte rp[RCSIZE];
 	if ((load(fn1,chroma,PICSIZE)) && (load(fn2,mono,PICSIZE)))
 	{
-		buildchroma(chroma,rp,lvl);
+		buildChroma(chroma,rp,lvl);
 		saveASM(fn3,mono,rp,lvl);
 	};
 }
