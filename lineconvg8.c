@@ -159,8 +159,7 @@ void saveASM(const char *fn, const byte *mono, const byte *rp, byte lvl)
 		fprintf(pf,"    org $2000\n");
 		fprintf(pf,"    run MAIN\n\n");
 		fprintf(pf,"    :16 .byte 0\n");
-		fprintf(pf,"PICTURE\n");
-		
+		fprintf(pf,"PICTURE\n");		
 		for (i=0; i<ALCHEIGHT; i++)
 		{
 			if (i==204) {fprintf(pf,"    :16 .byte 0\n");};
