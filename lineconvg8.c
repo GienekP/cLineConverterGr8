@@ -12,10 +12,10 @@ byte load(const char *fn, byte *b, unsigned int s)
 {
 	byte ret=0;
 	unsigned int i=0;
-    	FILE *pf;
-    	pf=fopen(fn,"rb");
-    	if (pf)
-    	{
+    FILE *pf;
+    pf=fopen(fn,"rb");
+    if (pf)
+    {
 		i=fread(b,sizeof(byte),s,pf);
 		fclose(pf);
 	};	
@@ -25,34 +25,48 @@ byte load(const char *fn, byte *b, unsigned int s)
 /*--------------------------------------------------------------------*/
 byte averageChroma(const byte *dta, unsigned int s)
 {
-    	byte hist[16],max=0,p=0;
-    	unsigned int i;
-    	for (i=0; i<16; i++) {hist[i]=0;};
-    	for (i=0; i<s; i++)
-    	{
-        	hist[((dta[i]>>4)&0x0F)]++;
-    	};
-    	for (i=0; i<16; i++)
-    	{
-        	if (hist[i]>max) {max=hist[i];p=i;};
-    	};
-    	return (p<<4);
+	byte hist[16],max=0,p=0;
+	unsigned int i;
+	for (i=0; i<16; i++) {hist[i]=0;};
+	for (i=0; i<s; i++)
+	{
+		hist[((dta[i]>>4)&0x0F)]++;
+	};
+	for (i=0; i<16; i++)
+	{
+		if (hist[i]>max) {max=hist[i];p=i;};
+	};
+	return (p<<4);
 }
 /*--------------------------------------------------------------------*/
-void buildChroma(const byte *in, byte *rp, byte lvl)
+byte maxLuma(const byte *dta, unsigned int s, byte lvl)
+{
+	byte max=lvl+2;
+	unsigned int i;
+	if (max>0x0E) {max=0x0E;};
+	for (i=0; i<s; i++)
+	{
+		unsigned int c=(((dta[i]>>5)&0x07)<<1);
+		if (c>max) {max=c;};
+	};
+	return max;
+}
+/*--------------------------------------------------------------------*/
+void buildRasta(const byte *chroma, const byte *luma, byte *rp, byte lvl)
 {
 	const unsigned int ct[14]={14,64,80,48,48,48,18,46,64,64,48,48,40,10};
-    	unsigned int i,j,h=0;
-    	for (i=0; i<(ALCHEIGHT/2); i++)
-    	{
-        	for (j=0; j<14; j++)
-        	{
-            		unsigned int cyc=ct[j];
-            		byte a=averageChroma(&in[h],cyc)+(lvl>>4);
-            		h+=cyc;
-            		rp[i*14+j]=a;
-        	};
-    	};
+	unsigned int i,j,h=0;
+	for (i=0; i<(ALCHEIGHT/2); i++)
+	{
+		for (j=0; j<14; j++)
+		{
+			unsigned int cyc=ct[j];
+			byte a=averageChroma(&chroma[h],cyc);
+			byte b=maxLuma(&luma[h],cyc,lvl);
+			h+=cyc;
+			rp[i*14+j]=(a|b);
+		};
+	};
 }
 /*--------------------------------------------------------------------*/
 extern void saveASM(const char *, const byte *, const byte *, byte lvl);
@@ -60,32 +74,25 @@ extern void saveASM(const char *, const byte *, const byte *, byte lvl);
 void lineconvg8(const char *fn1, const char *fn2, const char *fn3, byte lvl)
 {
 	byte chroma[PICSIZE];
-	byte mono[PICSIZE];
+	byte luma[PICSIZE];
 	byte rp[RCSIZE];
-	if ((load(fn1,chroma,PICSIZE)) && (load(fn2,mono,PICSIZE)))
+	if ((load(fn1,chroma,PICSIZE)) && (load(fn2,luma,PICSIZE)))
 	{
-		buildChroma(chroma,rp,lvl);
-		saveASM(fn3,mono,rp,lvl);
+		buildRasta(chroma,luma,rp,lvl);
+		saveASM(fn3,luma,rp,lvl);
 	};
 }
 /*--------------------------------------------------------------------*/
 unsigned char graylvl(const char *txt)
 {
-	unsigned char a,b,c;
+	unsigned char a;
 	a=txt[0];
-	b=txt[1];
-	if (b==0) {b=0xC;};
+	if (a==0) {a=0x2;};
 	if ((a>='0') && (a<='9')) {a-='0';};
 	if ((a>='A') && (a<='F')) {a-=('A'-10);};
 	if ((a>='a') && (a<='f')) {a-=('a'-10);};
-	if ((b>='0') && (b<='9')) {b-='0';};
-	if ((b>='A') && (b<='F')) {b-=('A'-10);};
-	if ((b>='a') && (b<='f')) {b-=('a'-10);};
 	a&=0x0F;
-	b&=0x0F;
-	a<<=4;
-	c=(a|b);
-	return c;
+	return a;
 }
 /*--------------------------------------------------------------------*/
 int main(int argc, char *argv[])
@@ -94,7 +101,7 @@ int main(int argc, char *argv[])
 	{
 		case 4:
 		{
-			lineconvg8(argv[1],argv[2],argv[3],0x2C);
+			lineconvg8(argv[1],argv[2],argv[3],0x02);
 		} break;
 		case 5:
 		{
@@ -104,11 +111,10 @@ int main(int argc, char *argv[])
 		{
 			printf("LineConverter Gr.8 - (c)GienekP\n");
 			printf("use:\n");
-			printf("   lineconvg8 ataripal.raw mono.raw picture.asm [2C]\n");
+			printf("   lineconvg8 ataripal.raw dither.raw picture.asm [2]\n");
 			printf("   ataripal.raw - 320x240 8-bit ATARI pallete format\n");		
-			printf("   mono.raw - 320x240 8-bit (zero/nonzero) pixels\n");		
+			printf("   dither.raw - 320x240 8-bit (grayscale) pixels\n");		
 			printf("   2 - background brightness\n");	
-			printf("   C - foreground brightness\n");	
 		} break;
 	};
 	return 0;
@@ -159,7 +165,8 @@ void saveASM(const char *fn, const byte *mono, const byte *rp, byte lvl)
 		fprintf(pf,"    org $2000\n");
 		fprintf(pf,"    run MAIN\n\n");
 		fprintf(pf,"    :16 .byte 0\n");
-		fprintf(pf,"PICTURE\n");		
+		fprintf(pf,"PICTURE\n");
+		
 		for (i=0; i<ALCHEIGHT; i++)
 		{
 			if (i==204) {fprintf(pf,"    :16 .byte 0\n");};
@@ -170,7 +177,7 @@ void saveASM(const char *fn, const byte *mono, const byte *rp, byte lvl)
 				for (k=0; k<8; k++)
 				{
 					unsigned int c;
-					if (mono[m]) {c=1;} else {c=0;};
+					if (mono[m]) {c=0;} else {c=1;};
 					d<<=1;
 					d|=c;
 					m++;
