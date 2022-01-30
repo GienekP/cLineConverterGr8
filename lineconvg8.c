@@ -12,10 +12,10 @@ byte load(const char *fn, byte *b, unsigned int s)
 {
 	byte ret=0;
 	unsigned int i=0;
-    FILE *pf;
-    pf=fopen(fn,"rb");
-    if (pf)
-    {
+    	FILE *pf;
+    	pf=fopen(fn,"rb");
+    	if (pf)
+    	{
 		i=fread(b,sizeof(byte),s,pf);
 		fclose(pf);
 	};	
