@@ -191,7 +191,7 @@ void saveASM(const char *fn, const byte *mono, const byte *rp, byte lvl)
 		fprintf(pf,"ANT ANTIC_PROGRAM PICTURE,ANT\n\n");
 		fprintf(pf,".MACRO ANTIC_PROGRAM\n");
 		fprintf(pf,"    :+204 dta $4F,a(:1+$0000+#*40)\n");
-		fprintf(pf,"    :+36 dta $4F,a(:1+$1FF0+#*40)\n");
+		fprintf(pf,"    :+35 dta $4F,a(:1+$1FF0+#*40)\n");
 		fprintf(pf,"    dta $41,a(:2)\n");
 		fprintf(pf,".ENDM\n\n");
 		fprintf(pf,"MAIN\n");
